@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+
+{% block title %}Debt Payoff Optimizer – SmartFinance AI{% endblock %}
+
+{% block page_title %}
+<i class="fa-solid fa-scale-balanced text-indigo-500 mr-2"></i>
+Debt Payoff Strategy Optimizer
+{% endblock %}
+
+{% block content %}
+<div class="space-y-8 max-w-7xl mx-auto">
+
+    <!-- KPI Summary Row -->
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div class="glass-card p-5">
+            <span class="text-xs text-slate-400 font-semibold uppercase">Total Debt Principal</span>
+            <div class="text-2xl font-extrabold text-rose-400 mt-1">{{ total_debt|currency }}</div>
+            <span class="text-[11px] text-slate-400 mt-1 block">Across all active liabilities</span>
+        </div>
+        <div class="glass-card p-5">
+            <span class="text-xs text-slate-400 font-semibold uppercase">Scheduled Minimums</span>
+            <div class="text-2xl font-extrabold text-white mt-1">{{ total_min_payments|currency }}<span class="text-xs font-normal text-slate-400">/mo</span></div>
+            <span class="text-[11px] text-slate-400 mt-1 block">Mandatory monthly debt-service</span>
+        </div>
+        <div class="glass-card p-5">
+            <span class="text-xs text-slate-400 font-semibold uppercase">Weighted Average APR</span>
+            <div class="text-2xl font-extrabold {% if weighted_apr >= 15 %}text-rose-400{% else %}text-amber-400{% endif %} mt-1">{{ weighted_apr }}%</div>
+            <span class="text-[11px] text-slate-400 mt-1 block">Effective portfolio borrowing cost</span>
+        </div>
+        <div class="glass-card p-5">
+            <span class="text-xs text-slate-400 font-semibold uppercase">Avalanche Interest Saved</span>
+            <div class="text-2xl font-extrabold text-emerald-400 mt-1">{{ comparison.interest_saved_by_avalanche|currency }}</div>
+            <span class="text-[11px] text-slate-400 mt-1 block">Saved vs Snowball strategy</span>
+        </div>
+    </div>
+
+    <!-- Strategy Comparison Cards & Simulation Controller -->
+    <div class="glass-card p-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between pb-6 mb-6 border-b border-slate-800 gap-4">
+            <div>
+                <h2 class="text-base font-bold text-white">Algorithmic Payoff Comparison: Avalanche vs. Snowball</h2>
+                <p class="text-xs text-slate-400">Calculate exact interest savings and debt-free payoff dates</p>
+            </div>
+            
+            <!-- Extra Payment Simulator Form -->
+            <form method="GET" action="{{ url_for('debts.index') }}" class="flex items-center space-x-2">
+                <span class="text-xs text-slate-300 font-medium">Extra Monthly Payment:</span>
+                <div class="relative w-28">
+                    <span class="absolute inset-y-0 left-0 pl-2 flex items-center text-slate-400 text-xs">₹</span>
+                    <input type="number" step="100" name="extra" value="{{ extra_payment }}" 
+                           class="w-full pl-6 pr-2 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <button type="submit" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30">
+                    Simulate
+                </button>
+            </form>
+        </div>
+
+        <!-- Strategy Side-by-Side Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            
+            <!-- Avalanche Card (Optimal) -->
+            <div class="p-5 rounded-2xl bg-slate-900/90 border border-emerald-500/30 relative">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                        <i class="fa-solid fa-trophy mr-1"></i> Mathematically Optimal
+                    </span>
+                    <span class="text-xs text-slate-400">Target: Highest APR first</span>
+                </div>
+                <h3 class="text-base font-extrabold text-white">Debt Avalanche Method</h3>
+                <p class="text-xs text-slate-400 mt-1">Pours extra cashflow into the highest interest liabilities first, minimizing total compounding interest.</p>
+
+                <div class="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-slate-800 text-xs">
+                    <div>
+                        <span class="text-slate-400">Total Interest Paid:</span>
+                        <div class="text-base font-bold text-emerald-400 mt-0.5">{{ comparison.avalanche.total_interest_paid|currency }}</div>
+                    </div>
+                    <div>
+                        <span class="text-slate-400">Payoff Duration:</span>
+                        <div class="text-base font-bold text-white mt-0.5">{{ comparison.avalanche.months_to_payoff }} months <span class="text-xs font-normal text-slate-400">({{ comparison.avalanche.years_to_payoff }} yrs)</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Snowball Card -->
+            <div class="p-5 rounded-2xl bg-slate-900/90 border border-indigo-500/30 relative">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/30">
+                        <i class="fa-solid fa-fire mr-1"></i> Psychological Momentum
+                    </span>
+                    <span class="text-xs text-slate-400">Target: Lowest Balance first</span>
+                </div>
+                <h3 class="text-base font-extrabold text-white">Debt Snowball Method</h3>
+                <p class="text-xs text-slate-400 mt-1">Eliminates smallest balances first regardless of interest rate, giving rapid behavioral wins.</p>
+
+                <div class="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-slate-800 text-xs">
+                    <div>
+                        <span class="text-slate-400">Total Interest Paid:</span>
+                        <div class="text-base font-bold text-slate-200 mt-0.5">{{ comparison.snowball.total_interest_paid|currency }}</div>
+                    </div>
+                    <div>
+                        <span class="text-slate-400">Payoff Duration:</span>
+                        <div class="text-base font-bold text-white mt-0.5">{{ comparison.snowball.months_to_payoff }} months <span class="text-xs font-normal text-slate-400">({{ comparison.snowball.years_to_payoff }} yrs)</span></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Comparative Trajectory Chart -->
+        <div class="mt-6">
+            <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Principal Balance Amortization Trajectory</h4>
+            <div class="h-72 relative">
+                <canvas id="debtPayoffChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Debts Table -->
+    <div class="glass-card p-6">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h3 class="text-base font-bold text-white">Recorded Liabilities & Loans</h3>
+                <p class="text-xs text-slate-400">Manage individual credit cards, mortgages, and student loans</p>
+            </div>
+            <button onclick="openModal('add-debt-modal')" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 transition-all flex items-center space-x-1.5">
+                <i class="fa-solid fa-plus text-xs"></i>
+                <span>Add Debt Account</span>
+            </button>
+        </div>
+
+        {% if debts %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead>
+                    <tr class="text-slate-400 border-b border-slate-800 bg-slate-900/60">
+                        <th class="py-3 px-4 font-semibold">Account / Creditor</th>
+                        <th class="py-3 px-4 font-semibold">Debt Type</th>
+                        <th class="py-3 px-4 font-semibold text-right">Principal Balance</th>
+                        <th class="py-3 px-4 font-semibold text-right">Interest Rate (APR)</th>
+                        <th class="py-3 px-4 font-semibold text-right">Minimum Payment</th>
+                        <th class="py-3 px-4 font-semibold text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60">
+                    {% for d in debts %}
+                    <tr class="hover:bg-slate-800/30 transition-colors">
+                        <td class="py-3.5 px-4 font-medium text-slate-100 flex items-center space-x-2">
+                            <i class="fa-solid fa-credit-card text-indigo-400"></i>
+                            <span>{{ d.debt_name }}</span>
+                        </td>
+                        <td class="py-3.5 px-4 text-slate-300">{{ d.debt_type }}</td>
+                        <td class="py-3.5 px-4 text-right font-bold text-rose-400">{{ d.principal_balance|currency }}</td>
+                        <td class="py-3.5 px-4 text-right font-semibold {% if d.interest_rate_apr >= 18 %}text-rose-400{% elif d.interest_rate_apr >= 10 %}text-amber-400{% else %}text-emerald-400{% endif %}">
+                            {{ d.interest_rate_apr }}%
+                        </td>
+                        <td class="py-3.5 px-4 text-right text-slate-200">{{ d.minimum_payment|currency }}/mo</td>
+                        <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                            <button onclick="openEditDebtModal({{ d.id }}, '{{ d.debt_name|replace('\'', '\\\'') }}', '{{ d.debt_type }}', {{ d.principal_balance }}, {{ d.interest_rate_apr }}, {{ d.minimum_payment }})" 
+                                    class="p-1.5 text-slate-400 hover:text-indigo-400 rounded-lg hover:bg-slate-800 transition-colors mr-1">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <form method="POST" action="{{ url_for('debts.delete', id=d.id) }}" class="inline" onsubmit="return confirm('Delete debt \'{{ d.debt_name }}\'?');">
+                                <button type="submit" class="p-1.5 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-slate-800 transition-colors">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12 text-slate-500">
+            <i class="fa-solid fa-award text-3xl mb-2 text-emerald-400 block"></i>
+            <p class="text-sm font-semibold text-slate-200">Zero active debt accounts recorded!</p>
+            <p class="text-xs text-slate-500 mt-1">If you hold credit card balances or personal loans, add them above to unlock repayment optimization.</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Add Debt Modal -->
+<div id="add-debt-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="glass-card max-w-md w-full p-6 border border-slate-700 shadow-2xl relative">
+        <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-800">
+            <h3 class="text-base font-bold text-white">Record Debt Account</h3>
+            <button onclick="closeModal('add-debt-modal')" class="text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <form method="POST" action="{{ url_for('debts.add') }}" class="space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Debt / Creditor Name *</label>
+                <input type="text" name="debt_name" required placeholder="e.g. Chase Sapphire, Auto Loan" 
+                       class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Debt Type</label>
+                    <select name="debt_type" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        {% for t in debt_types %}
+                        <option value="{{ t }}">{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Current Principal (₹) *</label>
+                    <input type="number" step="1" name="principal_balance" required placeholder="50000" 
+                           class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Interest Rate APR (%) *</label>
+                    <input type="number" step="0.01" name="interest_rate_apr" required placeholder="18.5" 
+                           class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Monthly Minimum (₹) *</label>
+                    <input type="number" step="1" name="minimum_payment" required placeholder="2500" 
+                           class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-3 border-t border-slate-800">
+                <button type="button" onclick="closeModal('add-debt-modal')" class="px-4 py-2 rounded-xl text-xs text-slate-300 hover:bg-slate-800">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30">
+                    Save Debt
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Debt Modal -->
+<div id="edit-debt-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="glass-card max-w-md w-full p-6 border border-slate-700 shadow-2xl relative">
+        <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-800">
+            <h3 class="text-base font-bold text-white">Edit Debt Account</h3>
+            <button onclick="closeModal('edit-debt-modal')" class="text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <form id="edit-debt-form" method="POST" class="space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Debt Name</label>
+                <input id="edit-debt-name" type="text" name="debt_name" required 
+                       class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Debt Type</label>
+                    <select id="edit-debt-type" name="debt_type" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        {% for t in debt_types %}
+                        <option value="{{ t }}">{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Principal (₹)</label>
+                    <input id="edit-debt-balance" type="number" step="1" name="principal_balance" required 
+                           class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">APR (%)</label>
+                    <input id="edit-debt-apr" type="number" step="0.01" name="interest_rate_apr" required 
+                           class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Minimum Payment (₹)</label>
+                    <input id="edit-debt-min" type="number" step="1" name="minimum_payment" required 
+                           class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-3 border-t border-slate-800">
+                <button type="button" onclick="closeModal('edit-debt-modal')" class="px-4 py-2 rounded-xl text-xs text-slate-300 hover:bg-slate-800">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const labels = {{ comparison.timeline_labels|tojson }};
+    const avCurve = {{ comparison.avalanche_curve|tojson }};
+    const snCurve = {{ comparison.snowball_curve|tojson }};
+    initDebtPayoffChart('debtPayoffChart', labels, avCurve, snCurve);
+});
+
+function openEditDebtModal(id, name, type, balance, apr, min) {
+    document.getElementById('edit-debt-form').action = `/debts/${id}/edit`;
+    document.getElementById('edit-debt-name').value = name;
+    document.getElementById('edit-debt-type').value = type;
+    document.getElementById('edit-debt-balance').value = balance;
+    document.getElementById('edit-debt-apr').value = apr;
+    document.getElementById('edit-debt-min').value = min;
+    openModal('edit-debt-modal');
+}
+</script>
+{% endblock %}
+

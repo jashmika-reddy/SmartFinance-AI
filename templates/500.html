@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}500 Internal Error – SmartFinance AI{% endblock %}
+
+{% block content %}
+<div class="min-h-[70vh] flex flex-col items-center justify-center text-center p-6">
+    <div class="glass-card p-10 max-w-md w-full border border-rose-500/20">
+        <div class="w-16 h-16 rounded-2xl bg-rose-600/20 text-rose-400 flex items-center justify-center text-2xl font-bold mx-auto mb-4">
+            500
+        </div>
+        <h2 class="text-xl font-extrabold text-white mb-2">System Processing Error</h2>
+        <p class="text-xs text-slate-400 mb-6">An unexpected error occurred while processing your financial models. Our risk engine logged the issue.</p>
+        <a href="{{ url_for('dashboard.index') }}" class="inline-flex items-center px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 transition-all">
+            <i class="fa-solid fa-house mr-1.5"></i>
+            Return to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}
+

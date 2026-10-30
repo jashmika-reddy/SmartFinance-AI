@@ -1,0 +1,2 @@
+# SmartFinance AI - Routes Package
+

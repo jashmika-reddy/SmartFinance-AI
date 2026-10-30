@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}User Profile & Settings – SmartFinance AI{% endblock %}
+
+{% block page_title %}
+<i class="fa-solid fa-user-gear text-indigo-500 mr-2"></i>
+Profile & Financial Configuration
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-8">
+
+    <div class="glass-card p-6 md:p-8">
+        <div class="flex items-center space-x-4 mb-6 pb-6 border-b border-slate-800">
+            <div class="w-16 h-16 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-2xl font-bold text-indigo-400">
+                {{ user.username[0]|upper }}
+            </div>
+            <div>
+                <h2 class="text-xl font-bold text-white">{{ user.full_name or user.username }}</h2>
+                <p class="text-sm text-slate-400">@{{ user.username }} • Member since {{ user.created_at.strftime('%B %Y') if user.created_at else 'Recent' }}</p>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('auth.profile') }}" class="space-y-6">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Full Name</label>
+                    <input type="text" name="full_name" value="{{ user.full_name }}" 
+                           class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Email Address</label>
+                    <input type="email" value="{{ user.email }}" disabled
+                           class="w-full px-4 py-2.5 bg-slate-900/50 border border-slate-800 rounded-xl text-slate-500 text-sm cursor-not-allowed">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Monthly Gross Baseline Income (₹)</label>
+                    <input type="number" step="500" name="monthly_income" value="{{ user.monthly_income }}" 
+                           class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Liquid Savings / Emergency Cash (₹)</label>
+                    <input type="number" step="1000" name="liquid_savings" value="{{ user.liquid_savings }}" 
+                           class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Risk Tolerance Horizon</label>
+                    <select name="risk_tolerance" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <option value="conservative" {% if user.risk_tolerance == 'conservative' %}selected{% endif %}>Conservative (Capital preservation priority)</option>
+                        <option value="moderate" {% if user.risk_tolerance == 'moderate' %}selected{% endif %}>Moderate (Balanced growth & risk buffer)</option>
+                        <option value="aggressive" {% if user.risk_tolerance == 'aggressive' %}selected{% endif %}>Aggressive (High growth equity focus)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Update Password (Optional)</label>
+                    <input type="password" name="new_password" placeholder="Leave blank to keep current" 
+                           class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-4 border-t border-slate-800">
+                <button type="submit" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm shadow-lg shadow-indigo-600/30 transition-all flex items-center space-x-2">
+                    <i class="fa-solid fa-floppy-disk text-xs"></i>
+                    <span>Save Changes</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock %}
+

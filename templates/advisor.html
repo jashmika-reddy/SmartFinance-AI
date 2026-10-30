@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}AI Financial Advisor – SmartFinance AI{% endblock %}
+
+{% block page_title %}
+<i class="fa-solid fa-robot text-indigo-500 mr-2"></i>
+Intelligent AI Financial Advisor
+{% endblock %}
+
+{% block content %}
+<div class="space-y-8 max-w-7xl mx-auto">
+
+    <!-- Header Description Card -->
+    <div class="glass-card p-6 relative overflow-hidden">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider block mb-1">Prescriptive Intelligence Engine</span>
+                <h2 class="text-xl font-extrabold text-white">Actionable Financial Health Prescriptions</h2>
+                <p class="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+                    Synthesizes your debt-to-income ratio, emergency fund runway, and cashflow variance into concrete, high-ROI financial actions.
+                </p>
+            </div>
+            
+            <div class="text-right shrink-0">
+                <span class="text-xs text-slate-400 block">Current Health Score:</span>
+                <span class="text-2xl font-extrabold text-white">{{ assessment.health_score }}<span class="text-xs text-slate-400 font-normal">/100</span></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommendations Cards Section -->
+    <div class="space-y-4">
+        <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider">Prioritized Interventions</h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {% for rec in recommendations %}
+            <div class="glass-card p-6 flex flex-col justify-between border-l-4 
+                {% if rec.badge_color == 'red' %}border-l-rose-500
+                {% elif rec.badge_color == 'amber' %}border-l-amber-500
+                {% elif rec.badge_color == 'emerald' %}border-l-emerald-500
+                {% else %}border-l-indigo-500{% endif %}">
+                
+                <div>
+                    <!-- Top Pill -->
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider
+                            {% if rec.badge_color == 'red' %}bg-rose-500/10 text-rose-400 border border-rose-500/30
+                            {% elif rec.badge_color == 'amber' %}bg-amber-500/10 text-amber-400 border border-amber-500/30
+                            {% elif rec.badge_color == 'emerald' %}bg-emerald-500/10 text-emerald-400 border border-emerald-500/30
+                            {% else %}bg-indigo-500/10 text-indigo-400 border border-indigo-500/30{% endif %}">
+                            {{ rec.priority }} • {{ rec.category }}
+                        </span>
+                        
+                        <span class="text-xs font-semibold text-emerald-400 flex items-center space-x-1">
+                            <i class="fa-solid fa-bolt text-[10px]"></i>
+                            <span>{{ rec.potential_impact }}</span>
+                        </span>
+                    </div>
+
+                    <h4 class="text-base font-bold text-white mb-1.5">{{ rec.title }}</h4>
+                    <p class="text-xs text-slate-300 leading-relaxed mb-4">{{ rec.summary }}</p>
+
+                    <!-- Action Steps List -->
+                    <div class="space-y-2 pt-3 border-t border-slate-800">
+                        <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Recommended Steps:</span>
+                        {% for step in rec.action_steps %}
+                        <div class="flex items-start space-x-2 text-xs text-slate-300">
+                            <span class="text-indigo-400 font-bold shrink-0 mt-0.5"><i class="fa-solid fa-check text-[10px]"></i></span>
+                            <span class="leading-relaxed">{{ step }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Interactive AI Financial Consultation Assistant -->
+    <div class="glass-card p-6">
+        <div class="flex items-center space-x-3 mb-4 pb-4 border-b border-slate-800">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-md shadow-indigo-600/30">
+                <i class="fa-solid fa-comments"></i>
+            </div>
+            <div>
+                <h3 class="text-base font-bold text-white">SmartFinance AI Consultation Assistant</h3>
+                <p class="text-xs text-slate-400">Ask tailored questions about personal finance, debt reduction, budgeting, or risk mitigation</p>
+            </div>
+        </div>
+
+        <!-- Quick Prompts Buttons -->
+        <div class="mb-4 flex flex-wrap gap-2">
+            <span class="text-xs text-slate-400 self-center mr-1">Quick Prompts:</span>
+            <button onclick="sendAdvisorMessage('Should I pay off debt or invest?')" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700 transition-colors">
+                💰 Should I pay off debt or invest?
+            </button>
+            <button onclick="sendAdvisorMessage('How much emergency fund do I need?')" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700 transition-colors">
+                🛡️ How much emergency fund do I need?
+            </button>
+            <button onclick="sendAdvisorMessage('How to improve my credit and risk score?')" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700 transition-colors">
+                📈 How to improve my risk score?
+            </button>
+            <button onclick="sendAdvisorMessage('Explain the 50/30/20 budget framework')" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700 transition-colors">
+                📊 Explain the 50/30/20 budget rule
+            </button>
+        </div>
+
+        <!-- Chat Output Messages Container -->
+        <div id="advisor-chat-messages" class="h-80 overflow-y-auto p-4 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-4 mb-4">
+            <!-- Initial Assistant Greeting -->
+            <div class="flex justify-start">
+                <div class="bg-slate-800 text-slate-200 rounded-2xl rounded-tl-none px-4 py-3 max-w-lg border border-slate-700/80 shadow-md text-xs leading-relaxed">
+                    <div class="font-semibold text-indigo-400 text-[11px] mb-1 flex items-center space-x-1.5">
+                        <i class="fa-solid fa-robot"></i>
+                        <span>SmartFinance AI Advisor</span>
+                    </div>
+                    Hello <strong>{{ user.full_name or user.username }}</strong>! I have analyzed your financial records (Health Score: <strong>{{ assessment.health_score }}/100</strong>, Runway: <strong>{{ assessment.features.emergency_runway_months }} mo</strong>, DTI: <strong>{{ assessment.features.dti_ratio }}%</strong>).
+                    How can I assist your financial planning today?
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Input Form -->
+        <form onsubmit="event.preventDefault(); sendAdvisorMessage();" class="flex items-center space-x-2">
+            <input id="advisor-chat-input" type="text" placeholder="Ask a financial question (e.g. 'How can I lower my interest payments?')..." 
+                   class="flex-1 px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 text-xs placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 transition-all flex items-center space-x-1.5">
+                <span>Send</span>
+                <i class="fa-solid fa-paper-plane text-xs"></i>
+            </button>
+        </form>
+    </div>
+
+</div>
+{% endblock %}
+

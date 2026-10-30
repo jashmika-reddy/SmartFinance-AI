@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Monte Carlo Stress Testing – SmartFinance AI{% endblock %}
+
+{% block page_title %}
+<i class="fa-solid fa-bolt text-indigo-500 mr-2"></i>
+Monte Carlo Stochastic Cashflow Stress Testing
+{% endblock %}
+
+{% block content %}
+<div class="space-y-8 max-w-7xl mx-auto">
+
+    <!-- Header Description Card -->
+    <div class="glass-card p-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h2 class="text-base font-bold text-white">Stochastic Solvency Simulation Engine</h2>
+                <p class="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+                    Evaluates forward 12-month liquid net cashflows across <strong>1,000 Monte Carlo paths</strong> under dynamic macroeconomic shocks (inflation spikes, job severance, unexpected medical outflows) using geometric Brownian motion with jump drift.
+                </p>
+            </div>
+            
+            <div class="flex items-center space-x-2 text-xs bg-slate-900 border border-slate-800 p-2.5 rounded-xl text-slate-300">
+                <i class="fa-solid fa-calculator text-indigo-400"></i>
+                <span>Initial Buffer: <strong>{{ initial_wealth|currency }}</strong></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scenario Switcher Buttons -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {% for sc_key, sc in simulations.items() %}
+        <button type="button" onclick="selectScenario('{{ sc_key }}')" id="btn-{{ sc_key }}"
+                class="scenario-btn p-4 rounded-xl border text-left transition-all {% if sc_key == 'baseline' %}bg-indigo-600/20 border-indigo-500 text-white shadow-lg shadow-indigo-500/10{% else %}bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200{% endif %}">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold">{{ sc.name }}</span>
+                {% if sc_key == 'baseline' %}<i class="fa-solid fa-circle-check text-emerald-400 text-xs"></i>
+                {% elif sc_key == 'stagflation' %}<i class="fa-solid fa-arrow-trend-up text-amber-400 text-xs"></i>
+                {% elif sc_key == 'job_loss' %}<i class="fa-solid fa-user-slash text-rose-400 text-xs"></i>
+                {% else %}<i class="fa-solid fa-hospital text-rose-400 text-xs"></i>{% endif %}
+            </div>
+            <p class="text-[11px] opacity-80 line-clamp-2 leading-relaxed">{{ sc.description }}</p>
+            <div class="mt-3 text-[11px] font-semibold text-slate-300 flex justify-between">
+                <span>Insolvency Risk:</span>
+                <span class="{% if sc.insolvency_probability > 15 %}text-rose-400{% else %}text-emerald-400{% endif %}">
+                    {{ sc.insolvency_probability }}%
+                </span>
+            </div>
+        </button>
+        {% endfor %}
+    </div>
+
+    <!-- Simulation Dynamic Results Row -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        
+        <div class="glass-card p-5">
+            <span class="text-xs text-slate-400 font-semibold uppercase">Probability of Insolvency</span>
+            <div id="mc-insolvency-prob" class="text-2xl font-extrabold text-rose-400 mt-1">
+                {{ simulations.baseline.insolvency_probability }}%
+            </div>
+            <span class="text-[11px] text-slate-400 mt-1 block">Chance liquid cash &le; $0 in 12 months</span>
+        </div>
+
+        <div class="glass-card p-5">
+            <span class="text-xs text-slate-400 font-semibold uppercase">12-Month Median Wealth (P50)</span>
+            <div id="mc-median-wealth" class="text-2xl font-extrabold text-white mt-1">
+                {{ simulations.baseline.final_median_wealth|currency }}
+            </div>
+            <span class="text-[11px] text-slate-400 mt-1 block">Expected trajectory outcome</span>
+        </div>
+
+        <div class="glass-card p-5">
+            <span class="text-xs text-slate-400 font-semibold uppercase">Pessimistic Stress Floor (P10)</span>
+            <div id="mc-min-wealth" class="text-2xl font-extrabold text-amber-400 mt-1">
+                {{ simulations.baseline.min_observed_wealth|currency }}
+            </div>
+            <span class="text-[11px] text-slate-400 mt-1 block">10th percentile downside bound</span>
+        </div>
+
+    </div>
+
+    <!-- Confidence Fan Chart -->
+    <div class="glass-card p-6">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h3 class="text-base font-bold text-white">Stochastic Confidence Fan Chart (1,000 Runs)</h3>
+                <p class="text-xs text-slate-400">Shaded bounds represent P10 (Pessimistic), P50 (Median), and P90 (Optimistic)</p>
+            </div>
+            <span class="text-xs text-slate-400 font-mono bg-slate-900 px-3 py-1 rounded-lg border border-slate-800">
+                12-Month Horizon
+            </span>
+        </div>
+
+        <div class="h-80 relative">
+            <canvas id="monteCarloChart"></canvas>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentScenario = 'baseline';
+
+document.addEventListener('DOMContentLoaded', () => {
+    initMonteCarloChart('monteCarloChart', currentScenario);
+});
+
+function selectScenario(scenarioKey) {
+    currentScenario = scenarioKey;
+    
+    // Update button visual styles
+    document.querySelectorAll('.scenario-btn').forEach(btn => {
+        btn.classList.remove('bg-indigo-600/20', 'border-indigo-500', 'text-white', 'shadow-lg');
+        btn.classList.add('bg-slate-900/60', 'border-slate-800', 'text-slate-400');
+    });
+    
+    const activeBtn = document.getElementById(`btn-${scenarioKey}`);
+    if (activeBtn) {
+        activeBtn.classList.add('bg-indigo-600/20', 'border-indigo-500', 'text-white', 'shadow-lg');
+        activeBtn.classList.remove('bg-slate-900/60', 'border-slate-800', 'text-slate-400');
+    }
+
+    initMonteCarloChart('monteCarloChart', scenarioKey);
+}
+</script>
+{% endblock %}
+
